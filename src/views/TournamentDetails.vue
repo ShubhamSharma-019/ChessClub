@@ -168,7 +168,7 @@ const fetchStandings = async () => {
     padding-bottom: 1rem;
 }
 .standings-title {
-    color: #cf4d06;
+    color: #e15307;
     font-weight: 700;
 }
 .table-gradient {
