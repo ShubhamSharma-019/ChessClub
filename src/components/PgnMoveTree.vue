@@ -53,7 +53,7 @@
 <script setup>
 import { computed } from 'vue';
 // This component imports itself for recursion
-import PgnMoveTree from './PgnMoveTree.vue'; // <-- Make sure this path is correct!
+import PgnMoveTree from './PgnMoveTree.vue'; 
 
 const props = defineProps({
   moveData: { type: Object, required: true },
@@ -64,25 +64,20 @@ const props = defineProps({
 
 const emit = defineEmits(['select-move']);
 
-// Use 'ply' (half-move number) as the unique, stable ID for the path
 const path = computed(() => {
   return [...props.basePath, props.moveData.ply]; 
 });
 
-// This move is the *exact* move the board is showing
 const isActiveMove = computed(() => {
   return props.moveData.notation.fen === props.currentFen;
 });
 
-// This move is *on the path* to the active move, but not the active move itself
 const isSelectedVariation = computed(() => {
   if (!props.activePath || props.activePath.length === 0 || isActiveMove.value) return false;
-  // Check if the current move's path is a *prefix* of the active path
   return props.activePath.length > path.value.length &&
          path.value.every((p, i) => p === props.activePath[i]);
 });
 
-// This variation *contains* the active move
 const isVariationActive = (variation) => {
   if (!props.activePath || variation.length === 0) return false;
   const firstMoveOfVariation = variation[0];
@@ -92,7 +87,6 @@ const isVariationActive = (variation) => {
          variationPath.every((p, i) => p === props.activePath[i]);
 };
 
-// Emit all necessary info when a move is clicked
 const selectMove = () => {
   emit('select-move', { 
     fen: props.moveData.notation.fen, 

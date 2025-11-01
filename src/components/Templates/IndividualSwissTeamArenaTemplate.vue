@@ -229,7 +229,6 @@ const teamStandings = computed(() => {
     teamsData[player.TeamID].players.push(player); // Add player to team list
   });
 
-  // Sort teams by total points (higher is better)
   const sorted = Object.values(teamsData).sort((a, b) => {
       // Primary Sort: Total Points
       if (b.totalPoints !== a.totalPoints) {

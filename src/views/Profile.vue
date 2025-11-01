@@ -543,9 +543,6 @@ async function fetchPlayerHistory(playerID) {
   color: #FFD700; /* Gold text on hover */
 }
 
-/* --- Live Search Dropdown --- */
-/* ... (existing .search-results rules) ... */
-
 .search-results .list-group-item .player-id {
   color: #20d4f8 !important; /* A light gray, change as desired */
   /* Or use a gold color: */
@@ -623,9 +620,6 @@ async function fetchPlayerHistory(playerID) {
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
 }
 
-/* ... (Keep all your existing styles) ... */
-
-/* --- Tournament History (Updates) --- */
 .list-group-item {
   border-bottom: 1px solid rgba(255, 215, 0, 0.1);
   padding: 1rem 0.5rem;

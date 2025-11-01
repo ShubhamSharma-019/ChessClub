@@ -608,7 +608,6 @@ const uniqueRoundsAndStagesForPairings = computed(() => {
     let indexB = stageOrder.indexOf(b);
     if (indexA === -1) indexA = Infinity;
     if (indexB === -1) indexB = Infinity;
-    // Fallback to string compare if both are not in the list
     if (indexA === Infinity && indexB === Infinity) return a.localeCompare(b);
     return indexA - indexB;
   });
@@ -623,7 +622,6 @@ const playoffMatches = computed(() => {
       .filter(m => m.Stage && m.Stage !== 'League')
       .map(match => ({...match, TeamA: getTeamDetails(match.TeamA_ID), TeamB: getTeamDetails(match.TeamB_ID)}));
     
-    // Use robust filtering to catch "Semifinal", "Semi Final 1", etc.
     const semifinals = matches.filter(m => m.Stage.includes('Semi'));
     const final = matches.filter(m => m.Stage.includes('Final'));
     const thirdPlace = matches.filter(m => m.Stage.includes('3rd'));
@@ -639,7 +637,6 @@ const hasPlayoffs = computed(() => {
   );
 });
 
-// Build playoffs slots (Semifinal 1, Semifinal 2, 3rd_Match, Final)
 const playoffs = computed(() => {
   const slot = (teamAName, teamAScore, teamBName, teamBScore, winner) => ({
     teamA: { name: teamAName || 'TBD', score: teamAScore ?? '-', },
@@ -703,7 +700,6 @@ const playoffs = computed(() => {
 
   return out;
 });
-// --- END OF NEW PLAYOFFS LOGIC ---
 
 
 const pairingsForSelectedRoundOrStage = computed(() => {
@@ -747,7 +743,6 @@ const teamsList = computed(() => {
             return; // Skip this player entry
         }
 
-        // Initialize team entry if it doesn't exist
         if (!teamsMap.has(p.TeamID)) {
             teamsMap.set(p.TeamID, {
                 TeamID: p.TeamID,
@@ -759,28 +754,23 @@ const teamsList = computed(() => {
         }
         const team = teamsMap.get(p.TeamID);
 
-        // Ensure player object has PlayerName before adding, provide default if missing
         const playerName = p.PlayerName || 'Unknown Player'; 
-        const playerToAdd = { ...p, PlayerName: playerName }; // Create a new object with guaranteed PlayerName
+        const playerToAdd = { ...p, PlayerName: playerName };
 
-        // Add player to the correct group based on PlayerType
         if (p.PlayerType === "Captain") team.captains.push(playerToAdd);
         else if (p.PlayerType === "Owner") team.owners.push(playerToAdd);
         else team.players.push(playerToAdd);
     });
 
-    // Safe sort function to handle potential missing names
     const safeSort = (a, b) => (a.PlayerName || '').localeCompare(b.PlayerName || '');
 
-    // Sort players alphabetically within each group using safe sort
     teamsMap.forEach((team) => {
         team.captains.sort(safeSort);
         team.owners.sort(safeSort);
         team.players.sort(safeSort);
     });
 
-    // Get team performance ranks from teamStandings
-    const standings = teamStandings.value; // Assuming teamStandings computed property exists
+    const standings = teamStandings.value; 
     const rankMap = new Map(
         standings.map((t) => [
             t.TeamID,
@@ -790,9 +780,7 @@ const teamsList = computed(() => {
 
     const teamsArray = Array.from(teamsMap.values());
 
-    // Sort teams based on rank, then match points, then game points
     teamsArray.sort((a, b) => {
-        // Use default high rank/low points if team not found in standings
         const teamAStats = rankMap.get(a.TeamID) || {
             rank: Infinity,
             matchPoints: -1,
@@ -804,22 +792,17 @@ const teamsList = computed(() => {
             gamePoints: -1,
         };
 
-        // Sort by rank (ascending)
         if (teamAStats.rank !== teamBStats.rank) return teamAStats.rank - teamBStats.rank;
-        // Then by match points (descending)
         if (teamAStats.matchPoints !== teamBStats.matchPoints)
             return teamBStats.matchPoints - teamAStats.matchPoints;
-        // Then by game points (descending)
         if (teamAStats.gamePoints !== teamBStats.gamePoints)
             return teamBStats.gamePoints - teamAStats.gamePoints;
-        // Maintain relative order if all tie-breakers are equal
         return 0; 
     });
 
-    return teamsArray; // Return the sorted array of team objects
-}); // End of computed property
+    return teamsArray; 
+}); 
 
-// --- METHODS ---
 const showPlayerRecords = (player) => {
   modalTitle.value = `Match History: ${player.PlayerName}`;
   modalRecords.value = (props.individualGames || [])

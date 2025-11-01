@@ -124,11 +124,9 @@ const tournamentData = ref({
   bracketMatches: []
 });
 
-// --- MASTER LIST URL (Remains the same) ---
+
 const MASTER_TOURNAMENT_LIST_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTR0IoPJT90A5D4QX8zfnB6-v8OB5i1KXD7j2yfGA4eFnNRuXel-nYkaEWtcSw7ZqxD3LnK5_Q3lTpy/pub?gid=0&single=true&output=csv'; // Replace with your actual Master List URL
 
-// --- REQUIRED SHEET NAMES PER TEMPLATE ---
-// Defines which 'SheetName' values are needed for each template type
 const REQUIRED_SHEET_NAMES = {
   TeamLeague: ['Info', 'Documents', 'Gallery', 'Teams_Players', 'Team_Matches', 'Individual_Games'],
   TeamSwiss: ['Info', 'Documents', 'Gallery', 'Teams_Players', 'Team_Matches', 'Individual_Games'],
@@ -139,8 +137,6 @@ const REQUIRED_SHEET_NAMES = {
   // MultiStageEvent does not use this
 };
 
-// --- DATA KEY MAPPING (Maps SheetName to tournamentData key) ---
-// This translates the 'SheetName' value from your index to the internal key used in tournamentData
 const DATA_KEY_MAP = {
     'Info': 'info',
     'Documents': 'documents',
@@ -156,8 +152,6 @@ const DATA_KEY_MAP = {
 };
 
 
-// --- SHARED CSV PARSING FUNCTION (Revised for Info Tab with Headers) ---
-// Handles both the SheetIndex (standard CSV) and the Info tab (header row)
 async function fetchAndParseSheet(url, isInfoTab = false) {
   if (!url) throw new Error("No URL provided to fetchAndParseSheet");
   try {
@@ -165,15 +159,14 @@ async function fetchAndParseSheet(url, isInfoTab = false) {
     if (!response.ok) throw new Error(`Network error: ${response.status} - ${response.statusText} for URL: ${url}`);
 
     const csvText = await response.text();
-    const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== ''); // Filter empty lines
+    const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== ''); 
 
-    if (lines.length === 0) return isInfoTab ? {} : []; // No lines at all
+    if (lines.length === 0) return isInfoTab ? {} : []; 
 
-    // Info Tab Logic (expects headers + 1 data row)
     if (isInfoTab) {
       if (lines.length < 2) {
           console.warn(`Info tab at ${url} seems to have only headers or is empty.`);
-          return {}; // Need headers and at least one data row
+          return {}; 
       }
       const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
       const values = lines[1].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Use robust split for the value row
@@ -186,7 +179,6 @@ async function fetchAndParseSheet(url, isInfoTab = false) {
       return infoObject; // Return the single object based on headers
     }
 
-    // Standard CSV parsing for SheetIndex and other data tabs
     if (lines.length < 2) return []; // Only headers, no data
 
     const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
@@ -209,7 +201,6 @@ async function fetchAndParseSheet(url, isInfoTab = false) {
   }
 }
 
-// --- MAIN DATA FETCHING LOGIC (Revised for SheetIndex) ---
 onMounted(() => {
   fetchGenericTournamentData();
 });
@@ -224,34 +215,27 @@ async function fetchGenericTournamentData() {
     });
 
 
-    // 1. Fetch Master List
     allTournaments.value = await fetchAndParseSheet(MASTER_TOURNAMENT_LIST_URL);
 
-    // 2. Find Current Tournament in Master List
     const currentTournament = allTournaments.value.find(t => t.TournamentID === props.id);
     if (!currentTournament) throw new Error(`Tournament ID "${props.id}" not found in Master List.`);
 
-    // 3. Get Template Type & Update Title
     templateType.value = currentTournament.TemplateType;
     if (!templateType.value) throw new Error(`No TemplateType for tournament ID "${props.id}".`);
     document.title = currentTournament.TournamentName || 'Tournament Details';
 
-    // 4. Handle MultiStageEvent separately (no SheetIndex needed)
+    
     if (templateType.value === 'MultiStageEvent') {
       isLoading.value = false;
-      return; // Done for this type
+      return; 
     }
 
-    // 5. Get SheetIndex URL and Fetch Index Data
-    const sheetIndexUrl = currentTournament.SheetURL; // This URL now points to the SheetIndex tab
+    const sheetIndexUrl = currentTournament.SheetURL; 
     if (!sheetIndexUrl) throw new Error(`No SheetURL (SheetIndex Tab URL) for tournament ID "${props.id}".`);
-    // Fetch Index data using standard CSV parsing
     const sheetIndexData = await fetchAndParseSheet(sheetIndexUrl);
 
-    // 6. Create URL Map from SheetIndex Data
     const urlMap = new Map();
     sheetIndexData.forEach(row => {
-        // Using your column names: SheetName and CSV_URL
         if (row.SheetName && row.CSV_URL) {
             urlMap.set(row.SheetName, row.CSV_URL);
         } else {
@@ -259,21 +243,16 @@ async function fetchGenericTournamentData() {
         }
     });
 
-    // 7. Get Required Sheet Names for this Template
     const requiredNames = REQUIRED_SHEET_NAMES[templateType.value];
     if (!requiredNames) throw new Error(`No required sheet names defined for template: "${templateType.value}"`);
 
-    // 8. Build Fetch Promises using URLs from the urlMap
     const fetchPromises = [];
-    const dataKeys = []; // To store the keys like 'info', 'documents', etc.
+    const dataKeys = [];
 
     for (const sheetName of requiredNames) {
-      // sheetName = 'Info', 'Documents', etc.
       const specificTabUrl = urlMap.get(sheetName);
-      const dataKey = DATA_KEY_MAP[sheetName]; // Get corresponding key like 'info', 'documents'
-
+      const dataKey = DATA_KEY_MAP[sheetName]; 
       if (specificTabUrl && dataKey) {
-        // Fetch 'Info' using special parsing, others normally
         fetchPromises.push(fetchAndParseSheet(specificTabUrl, sheetName === 'Info'));
         dataKeys.push(dataKey);
       } else {
@@ -282,29 +261,23 @@ async function fetchGenericTournamentData() {
          }
          if (!specificTabUrl) {
             console.warn(`URL for SheetName "${sheetName}" not found in SheetIndex data for tournament ${props.id}. Skipping fetch.`);
-            // Set default empty value for missing data
             tournamentData.value[dataKey || sheetName] = (dataKey === 'info') ? {} : [];
          }
       }
     }
 
-    // 9. Fetch all data in parallel
     if (fetchPromises.length > 0) {
         const allTabData = await Promise.all(fetchPromises);
 
-        // 10. Store fetched data
         allTabData.forEach((data, index) => {
           const key = dataKeys[index];
-          tournamentData.value[key] = data; // Store fetched data (object for 'info', arrays otherwise)
-        });
+          tournamentData.value[key] = data; 
     } else {
-        // If no promises were created (e.g., empty index or missing required URLs), ensure info isn't empty if possible
          if (!tournamentData.value.info.TournamentName && currentTournament.TournamentName) {
             tournamentData.value.info.TournamentName = currentTournament.TournamentName;
          }
     }
 
-     // Ensure TournamentName is present in info (fallback from master list if needed)
      if (!tournamentData.value.info.TournamentName && currentTournament.TournamentName) {
         tournamentData.value.info.TournamentName = currentTournament.TournamentName;
      }
@@ -320,7 +293,7 @@ async function fetchGenericTournamentData() {
 </script>
 
 <style scoped>
-/* Styles remain unchanged */
+
 .generic-tournament-page {
   background: #111;
   color: #eee;
