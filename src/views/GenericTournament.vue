@@ -272,7 +272,8 @@ async function fetchGenericTournamentData() {
         allTabData.forEach((data, index) => {
           const key = dataKeys[index];
           tournamentData.value[key] = data; 
-    } else {
+        });
+        } else {
          if (!tournamentData.value.info.TournamentName && currentTournament.TournamentName) {
             tournamentData.value.info.TournamentName = currentTournament.TournamentName;
          }
